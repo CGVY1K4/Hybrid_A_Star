@@ -127,8 +127,34 @@ void HybridAStarFlow::Run() {
                 goal_yaw
         );
 
+        // 현재 위치와 목표 위치 출력
+        std::cout << "Current Position: (" << start_state[0] << ", " << start_state[1] << ", " << start_state[2] << ")\n";
+        std::cout << "Goal Position: (" << goal_state[0] << ", " << goal_state[1] << ", " << goal_state[2] << ")\n";
+
         if (kinodynamic_astar_searcher_ptr_->Search(start_state, goal_state)) {
             auto path = kinodynamic_astar_searcher_ptr_->GetPath();
+
+            // 경로의 각 점의 좌표를 출력합니다.
+            ros::NodeHandle nh;
+    
+            ros::Publisher vector3d_pub = nh.advertise<geometry_msgs::Vector3>("path_goal", 10);
+    
+            ros::Rate loop_rate(1000);
+    
+            for (const auto &pose : path) {
+                std::cout << "Path Point: (" << pose.x() << ", " << pose.y() << ", " << pose.z() << ")\n";
+    
+                // Vector3 메시지 생성 및 값 설정
+                geometry_msgs::Vector3 vector_msg;
+                vector_msg.x = pose.x();
+                vector_msg.y = pose.y();
+                vector_msg.z = pose.z();
+    
+                vector3d_pub.publish(vector_msg);
+    
+                loop_rate.sleep();
+            } 
+            
             PublishPath(path);
             PublishVehiclePath(path, 4.0, 2.0, 5u);
             PublishSearchedTree(kinodynamic_astar_searcher_ptr_->GetSearchedTree());
